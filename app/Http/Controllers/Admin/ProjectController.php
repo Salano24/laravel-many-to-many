@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Project;
+use App\Models\Technology;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
 use Illuminate\Support\Facades\Storage;
@@ -29,8 +30,9 @@ class ProjectController extends Controller
      */
     public function create()
     {
+        $technologies = Technology::all();
         $types = Type::all();
-        return view('admin.projects.create', compact('types'));
+        return view('admin.projects.create', compact('types', 'technologies'));
     }
 
     /**
@@ -49,6 +51,9 @@ class ProjectController extends Controller
         $slug_data = Project::createSlug($val_data['title']);
         $val_data['slug'] =  $slug_data;
         $project = Project::create($val_data);
+        if ($request->has('technologies')) {
+            $project->technologies()->attach($val_data['technologies']);
+        }
 
         return redirect()->route('admin.projects.index')->with('message', "$project->title add successfully");
     }
@@ -72,8 +77,9 @@ class ProjectController extends Controller
      */
     public function edit(Project $project)
     {
+        $technologies = Technology::all();
         $types = Type::all();
-        return view('admin.projects.edit', compact('project', 'types'));
+        return view('admin.projects.edit', compact('project', 'types','technologies'));
     }
 
     /**
@@ -99,6 +105,12 @@ class ProjectController extends Controller
         $slug_data = Project::createSlug($val_data['title']);
         $val_data['slug'] =  $slug_data;
         $project->update($val_data);
+        if ($request->has('technologies')) {
+            $project->technologies()->sync($val_data['technologies']);
+        } else {
+            $project->technologies()->sync([]);
+        }
+        
         return redirect()->route('admin.projects.index')->with('message', "$project->title update successfully");
     }
 
